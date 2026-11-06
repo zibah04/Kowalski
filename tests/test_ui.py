@@ -16,5 +16,11 @@ class UISmoke(unittest.TestCase):
         with patch.object(Kowalski,"scan",lambda self: None):
             w=Kowalski()
         self.assertIn("Kowalski",w.windowTitle())
-        self.assertGreaterEqual(w.pages.count(),4)
+        self.assertEqual(w.pages.count(),6)
+        self.assertEqual(len(w.nav_buttons),6)
+        self.assertTrue(w.nav_buttons[0].isChecked())
+        w.navigate(3)
+        self.assertEqual(w.pages.currentIndex(),3)
+        self.assertTrue(w.nav_buttons[3].isChecked())
+        self.assertFalse(w.nav_buttons[0].isChecked())
         w.close()
