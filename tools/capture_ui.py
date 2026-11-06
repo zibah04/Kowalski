@@ -4,7 +4,7 @@ import sys
 import time
 from pathlib import Path
 
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+os.environ["QT_QPA_PLATFORM"] = "windows"  # real Windows backend preserves system fonts
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
