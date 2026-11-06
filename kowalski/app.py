@@ -9,20 +9,30 @@ from . import diagnostics
 from .repairs import TOOLS,launch_tool
 
 CSS="""
-QWidget {background:#080e19;color:#e8f4fb;font:11pt 'Segoe UI';}
-QLabel#logo {color:#69f0a3;font-size:22pt;font-weight:900;}
-QLabel#heading {font-size:22pt;font-weight:700;}
-QLabel#muted {color:#8ba5b8;font-size:10pt;}
-QLabel#metric {font-size:23pt;font-weight:700;}
-QFrame#panel {background:#111d2c;border:1px solid #23364b;border-radius:12px;}
-QFrame#sidebar {background:#0b1523;border-right:1px solid #24344a;}
-QPushButton {background:#17283b;border:1px solid #294057;border-radius:8px;color:#d9eaf5;padding:10px 14px;text-align:left;}
-QPushButton:hover {background:#203a4e;border-color:#4bce94;}
-QPushButton#primary {background:#61e7a0;color:#081a20;border:none;font-weight:800;text-align:center;}
-QTextEdit,QLineEdit {background:#0d1724;color:#d2e5ee;border:1px solid #2b4157;border-radius:8px;padding:9px;}
-QProgressBar {background:#203447;border:none;border-radius:5px;height:9px;text-align:center;}
-QProgressBar::chunk {background:#61e7a0;border-radius:5px;}
-QScrollArea {border:none;}
+QWidget { background:#10151d; color:#e8edf5; font:10pt 'Segoe UI'; }
+QMainWindow { background:#10151d; }
+QLabel#logo { color:#f4f7fb; font-size:23pt; font-weight:800; letter-spacing:1px; }
+QLabel#heading { color:#f5f7fb; font-size:23pt; font-weight:750; }
+QLabel#subheading { color:#9aa9ba; font-size:10pt; }
+QLabel#muted { color:#91a0b2; font-size:9pt; }
+QLabel#metric { color:#f6f8fc; font-size:27pt; font-weight:750; }
+QFrame#sidebar { background:#171e29; border-right:1px solid #283342; }
+QFrame#panel { background:#1a2330; border:1px solid #2a3748; border-radius:14px; }
+QFrame#metricPanel { background:#1a2330; border:1px solid #2a3748; border-radius:14px; }
+QPushButton { background:#222e3d; border:1px solid #344357; border-radius:9px; color:#e4ebf4; padding:10px 14px; text-align:left; }
+QPushButton:hover { background:#2a394b; border-color:#6e91b8; }
+QPushButton#navButton { background:transparent; border:0; border-radius:9px; color:#aebaca; padding:12px 14px; text-align:left; font-weight:600; }
+QPushButton#navButton:hover { background:#222d3b; color:#ffffff; }
+QPushButton#navButton:checked { background:#26394d; color:#ffffff; border-left:3px solid #78b7f4; padding-left:11px; }
+QPushButton#primary { background:#78b7f4; color:#101923; border:0; border-radius:9px; padding:11px 18px; font-weight:750; text-align:center; }
+QPushButton#primary:hover { background:#9acaff; }
+QPushButton:disabled { color:#647386; background:#202a36; }
+QTextEdit,QLineEdit { background:#131b26; color:#e0e8f1; border:1px solid #344357; border-radius:9px; padding:10px; selection-background-color:#426d98; }
+QLineEdit:focus,QTextEdit:focus { border:1px solid #78b7f4; }
+QProgressBar { background:#2a3544; border:0; border-radius:5px; height:9px; text-align:center; }
+QProgressBar::chunk { background:#78b7f4; border-radius:5px; }
+QScrollArea { border:0; background:transparent; }
+QScrollArea QWidget { background:transparent; }
 """
 def label(value,kind=None):
     w=QLabel(str(value));w.setWordWrap(True)
@@ -49,20 +59,33 @@ class Kowalski(QMainWindow):
         root=QWidget();self.setCentralWidget(root)
         shell=QHBoxLayout(root);shell.setContentsMargins(0,0,0,0);shell.setSpacing(0)
         side=QFrame();side.setObjectName("sidebar");side.setFixedWidth(228)
-        menu=QVBoxLayout(side);menu.setContentsMargins(18,28,18,24);menu.setSpacing(12)
-        menu.addWidget(label("KOWALSKI","logo"));menu.addWidget(label("YOUR PC. UNDER CONTROL.","muted"));menu.addSpacing(25)
-        self.pages=QStackedWidget()
+        menu=QVBoxLayout(side);menu.setContentsMargins(18,30,18,24);menu.setSpacing(7)
+        menu.addWidget(label("KOWALSKI","logo"));menu.addWidget(label("PC CARE, WITHOUT THE GUESSWORK.","muted"));menu.addSpacing(28)
+        menu.addWidget(label("WORKSPACE","muted"))
+        self.pages=QStackedWidget();self.nav_buttons=[]
         for i,name in enumerate(["Dashboard","Diagnostics","Windows errors","Crash investigator","Maintenance","About"]):
-            b=QPushButton(name);b.clicked.connect(lambda _,n=i:self.pages.setCurrentIndex(n));menu.addWidget(b)
-        menu.addStretch();menu.addWidget(label("LOCAL FIRST  •  NO TELEMETRY","muted"))
+            b=QPushButton(name);b.setObjectName("navButton");b.setCheckable(True);b.setChecked(i==0)
+            b.clicked.connect(lambda checked,n=i:self.navigate(n));menu.addWidget(b);self.nav_buttons.append(b)
+        menu.addStretch()
+        menu.addWidget(label("●  LOCAL-FIRST DIAGNOSTICS","muted"))
+        menu.addWidget(label("No account. No telemetry.","muted"))
         shell.addWidget(side)
-        main=QWidget();content=QVBoxLayout(main);content.setContentsMargins(25,22,25,18);content.setSpacing(14)
-        head=QHBoxLayout();head.addWidget(label("PC HEALTH CENTER","heading"));head.addStretch()
-        self.scan_btn=QPushButton("Run full scan");self.scan_btn.setObjectName("primary")
+        main=QWidget();content=QVBoxLayout(main);content.setContentsMargins(30,26,30,22);content.setSpacing(15)
+        head=QHBoxLayout()
+        titles=QVBoxLayout();titles.setSpacing(3)
+        titles.addWidget(label("PC HEALTH CENTER","heading"))
+        titles.addWidget(label("A clearer picture of what is happening on your Windows PC.","subheading"))
+        head.addLayout(titles);head.addStretch()
+        self.scan_btn=QPushButton("↻   Run full scan");self.scan_btn.setObjectName("primary")
         self.scan_btn.clicked.connect(self.scan);head.addWidget(self.scan_btn);content.addLayout(head)
-        self.status=label("Ready to scan","muted");content.addWidget(self.status)
+        self.status=label("●  Ready to scan","muted");content.addWidget(self.status)
         content.addWidget(self.pages);shell.addWidget(main,1)
         self.make_pages();self.scan()
+
+    def navigate(self,index):
+        self.pages.setCurrentIndex(index)
+        for i,button in enumerate(self.nav_buttons):
+            button.setChecked(i==index)
 
     def page(self):
         scroll=QScrollArea();scroll.setWidgetResizable(True)
@@ -73,7 +96,7 @@ class Kowalski(QMainWindow):
         dash=self.page();dash.addWidget(label("LIVE RESOURCE OVERVIEW","muted"))
         grid=QGridLayout();grid.setSpacing(12);self.metrics={}
         for i,(key,title) in enumerate([("cpu","CPU USAGE"),("ram","RAM USED"),("disk","SYSTEM DISK"),("health","RESOURCE STATUS")]):
-            p,body=panel();body.addWidget(label(title,"muted"));w=label("—","metric")
+            p,body=panel();p.setObjectName("metricPanel");body.addWidget(label(title,"muted"));w=label("—","metric")
             body.addWidget(w);grid.addWidget(p,i//2,i%2);self.metrics[key]=w
         dash.addLayout(grid);p,body=panel();body.addWidget(label("HEALTH FINDINGS","muted"))
         self.findings=label("Scanning…");body.addWidget(self.findings);dash.addWidget(p);dash.addStretch()
@@ -119,7 +142,7 @@ class Kowalski(QMainWindow):
 
     def scan(self):
         if self.thread is not None:return
-        self.scan_btn.setEnabled(False);self.status.setText("Scanning resources, Windows crashes and hardware reports…")
+        self.scan_btn.setEnabled(False);self.status.setText("●  Scanning resources, Windows crashes and hardware reports…")
         t=QThread(self);w=ScanWorker();w.moveToThread(t)
         self.thread=t;self.worker=w
         t.started.connect(w.run)
@@ -136,7 +159,7 @@ class Kowalski(QMainWindow):
         QMessageBox.warning(self,"Scan failed",message)
 
     def scan_done(self,r):
-        self.report=r;self.status.setText("Last scan: "+r["captured_at"]+"   •   Data stays local")
+        self.report=r;self.status.setText("●  Scan complete  ·  "+r["captured_at"]+"  ·  All data stays on this PC")
         self.metrics["cpu"].setText(f"{r['cpu_percent']:.0f}%")
         self.metrics["ram"].setText(f"{r['ram_used_percent']:.0f}%")
         d=next((x for x in r["disks"] if os.environ.get("SystemDrive","C:").lower() in x["mount"].lower()),None)
